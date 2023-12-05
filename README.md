@@ -1,2 +1,0 @@
-# study-project
-hello world
