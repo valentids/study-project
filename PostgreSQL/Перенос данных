@@ -1,0 +1,61 @@
+INSERT INTO [POSTGRESQL].[PlasticOrder].[public].[cardtypes]
+SELECT idCardType, idCardSystem, IIF(name NOT LIKE '[А-Я]%', right(name,len(name)-2), name)
+FROM PlasticOrder.dbo.cardTypes
+
+INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[departments]
+SELECT idDepartment, name, idDepartmentsSystem, workTime, phone, addressString, city, street, build, SCNAME, KLADR, KLADR_STREET
+FROM PlasticOrder.dbo.departments
+
+INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[dirchannels]
+SELECT idDirChannel, name
+FROM PlasticOrder.dbo.dirChannels
+
+INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[dirstatuses]
+SELECT idDirStatus, name
+FROM PlasticOrder.dbo.dirStatuses
+
+SELECT COUNT (1) FROM dbo.clients 
+result: 43671 -- опытным путем удалось выяснить, что сервер слетает при некоем числе строк и далее переподключается только через SQL Server Configuration Manager. 
+Вследствие чего было принято решение оптимизировать процесс в пользу переноса данных в ограниченном количестве строк по 10000 за запрос.
+Следующий момент был связан с тем, что изначально данная таблица переносилась второй по счету. Внешние ключи были созданы в PostreSQL заблаговременно при создании таблиц.
+Однако, запрос на перенос данных не исполнялся ввиду наличия внешних ключей в MS SQL. Далее, они были удалены.
+Таблица все равно не перенеслась, т.к. в PostgreSQL уже были созданы внешние ключи. Таким образом, сначала были перенесены таблицы выше (в том числе, dirstatus, на которой и ссылается столбец в данной таблице).
+
+1) INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[clients]
+SELECT idClient, firstName, middleName, surname, birthday, regAddress, idDirStatus, createDate, PIN_EQ
+FROM PlasticOrder.dbo.clients
+WHERE idClient BETWEEN '1' AND '10000'
+
+2) INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[clients]
+SELECT idClient, firstName, middleName, surname, birthday, regAddress, idDirStatus, createDate, PIN_EQ
+FROM PlasticOrder.dbo.clients
+WHERE idClient BETWEEN '10001' AND '20000'
+
+3) INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[clients]
+SELECT idClient, firstName, middleName, surname, birthday, regAddress, idDirStatus, createDate, PIN_EQ
+FROM PlasticOrder.dbo.clients
+WHERE idClient BETWEEN '20001' AND '30000'
+
+4) INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[clients]
+SELECT idClient, firstName, middleName, surname, birthday, regAddress, idDirStatus, createDate, PIN_EQ
+FROM PlasticOrder.dbo.clients
+WHERE idClient BETWEEN '30001' AND '43671'
+
+
+INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[dirstatusesorders]
+SELECT idDirStatusOrder, name
+FROM PlasticOrder.dbo.dirStatusesOrders
+
+
+SELECT COUNT (1) FROM dbo.orders
+result: 43669
+
+1) INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[orders]
+SELECT idOrder, idClient, idDirChannel, idCardType, idDepartment, idDirStatusOrder, createDate, editUser, updateDate
+FROM PlasticOrder.dbo.Orders
+WHERE idOrder BETWEEN '1' AND '10000'
+
+2) INSERT INTO [PLASTICORDER].[PlasticOrder].[public].[orders]
+SELECT idOrder, idClient, idDirChannel, idCardType, idDepartment, idDirStatusOrder, createDate, editUser, updateDate
+FROM PlasticOrder.dbo.Orders
+WHERE idOrder BETWEEN '10001' AND '20000'

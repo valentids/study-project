@@ -1,0 +1,89 @@
+CREATE TABLE public.cardTypes(
+idCardType smallint NOT NULL, -- значение из исходной БД в MS SQL: для типа карты используется целочисленное значение, также заранее известно, что количество типов карт ограниченно.
+idCardSystem bigint NULL, -- аналогично целочисленное значение.
+name varchar(50) NULL, -- строковый тип данных: выставлено ограничение по длине строки, т.к. не подразумеваем излишне длинные названия для типов карт.
+CONSTRAINT "PK_cardType" PRIMARY KEY (idCardType))
+
+CREATE TABLE public.clients(
+idClient bigint NOT NULL, -- по аналогии с использованным ранее smallint, используются целочисленные значения; однако, количество клиентов подразумевается в больших значениях, вследствие чего ограничение невозможно.
+firstName text NULL, -- значение в оригинальной БД - nvarchar, не поддерживающееся в PostgreSQL. Т.к. поле содержит данные в Юникод формате, то допустимо и равноценно использовать text.
+middleName text NULL,
+surname text NULL,
+birthday date NULL, -- использование типа данных date продиктовано указанием даты рождения клиента.
+regAddress text NULL,
+idDirStatus smallint NULL,
+crateDate date NULL,
+PIN_EQ nchar(6) NULL, -- строковые данные ограниченной длины (не более 6 байтов).
+CONSTRAINT "PK_clients" PRIMARY KEY (idClient))
+
+ALTER TABLE public.clients 
+ADD CONSTRAINT FK_clients_dirStatuses FOREIGN KEY (idDirStatus) REFERENCES dirStatuses(idDirStatus) -- добавление внешнего ключа для столбца idDirStatus, ссылающегося на одноименный столбец в таблице dirStatuses.
+
+
+CREATE TABLE public.departments(
+idDepartment int NOT NULL, -- количество отделений не подразумевает значение больше количества клиентов, но все же достаточное для того, чтобы иметь широкий диапазон потенциальных значений.
+name nchar(255) NULL, - строковые данные ограниченной длины (не более 255 символов)
+idDepartmentSystem bigint NULL,
+workTime text NULL,
+phone text NULL,
+addressString text NULL,
+city text NULL,
+street text NULL,
+build text NULL,
+SCNAME varchar(10) NULL, - строковые данные с ограничением по кол-ву байтов.
+KLADR varchar(13) NULL,
+KLADR_STREET varchar(17) NULL,
+CONSTRAINT "PK_department" PRIMARY KEY (idDepartment))
+
+CREATE TABLE public.dirChannels(
+idDirChannel smallint NOT NULL,
+name text NULL,
+CONSTRAINT "PK_dirChannel" PRIMARY KEY (idDirChannel))
+
+CREATE TABLE public.dirStatuses(
+idDirStatus smallint NOT NULL,
+name text NULL,
+CONSTRAINT "PK_dirStatuses" PRIMARY KEY (idDirStatus))
+
+CREATE TABLE public.dirStatusesOrders(
+idDirStatusOrder smallint NOT NULL,
+name text NULL,
+CONSTRAINT "PK_dirStatusesOrders" PRIMARY KEY (idDirStatusOrder))
+
+CREATE TABLE public.orders(
+idOrder bigint NOT NULL,
+idClient bigint NULL,
+idDirChannel smallint NULL,
+idCardType smallint NULL,
+idDepartment int NULL,
+idDirStatusOrder smallint NULL,
+createDate date NULL,
+editUser bigint NULL,
+updateDate date NULL,
+CONSTRAINT "PK_orders" PRIMARY KEY (idOrder))
+
+CREATE INDEX "NonClusteredIndex-CreateDate-IdDirChannel-IdCardType" ON public.orders (createDate,idDirChannel,idCardType) -- создание некластерного индекса для таблицы.
+
+ALTER TABLE public.orders
+ADD CONSTRAINT FK_orders_CardType FOREIGN KEY (idCardType) REFERENCES cardTypes(idCardType) -- добавление внешнего ключа для столбца idCardType, ссылающегося на одноименный столбец в таблице cardTypes.
+
+ALTER TABLE public.orders
+ADD CONSTRAINT FK_orders_clients FOREIGN KEY (idClient) REFERENCES clients(idClient) -- добавление внешнего ключа для столбца idClient, ссылающегося на одноименный столбец в таблице clients.
+
+ALTER TABLE public.orders
+ADD CONSTRAINT FK_orders_department FOREIGN KEY (idDepartment) REFERENCES departments(idDepartment) -- добавление внешнего ключа для столбца idDepartment, ссылающегося на одноименный столбец в таблице departments.
+
+ALTER TABLE public.orders
+ADD CONSTRAINT FK_orders_dirChannel FOREIGN KEY (idDirChannel) REFERENCES dirChannels(idDirChannel) -- добавление внешнего ключа для столбца idDirChannel, ссылающегося на одноименный столбец в таблице dirChannels.
+
+ALTER TABLE public.orders
+ADD CONSTRAINT FK_orders_dirStatusesOrders FOREIGN KEY (idDirStatusOrder) REFERENCES dirStatusesOrders(idDirStatusOrder) -- добавление внешнего ключа для столбца idStatusOrder, ссылающегося на одноименный столбец в таблице dirStatusesOrders.
+
+ALTER TABLE public.orders
+ADD CONSTRAINT FK_orders_users FOREIGN KEY (editUser) REFERENCES users(idUser) -- добавление внешнего ключа для столбца idUser, ссылающегося на одноименный столбец в таблице users.
+
+
+CREATE TABLE public.users(
+idUser bigint NOT NULL,
+login nchar(10) NULL,
+CONSTRAINT "PK_users" PRIMARY KEY (idUser))
